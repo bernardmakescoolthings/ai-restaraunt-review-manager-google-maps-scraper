@@ -1,0 +1,14 @@
+version: '3.8'
+
+services:
+  postgres:
+    build: .
+    container_name: reviews-postgres
+    restart: always
+    ports:
+      - "${DB_PORT}:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+
+volumes:
+  postgres_data: 
