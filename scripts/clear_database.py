@@ -52,12 +52,12 @@ def clear_reviews(business_url=None):
     try:
         with conn.cursor() as cursor:
             # Check if table exists
-            if not table_exists(cursor, 'review'):
+            if not table_exists(cursor, 'reviews'):
                 print("No reviews table found. The database is already empty.")
                 return
             
             # First get count of reviews to be deleted
-            query = "SELECT COUNT(*) FROM review"
+            query = "SELECT COUNT(*) FROM reviews"
             params = []
             
             if business_url:
@@ -82,7 +82,7 @@ def clear_reviews(business_url=None):
                 return
                 
             # Delete reviews
-            query = "DELETE FROM review"
+            query = "DELETE FROM reviews"
             if business_url:
                 query += " WHERE business_url = %s"
                 cursor.execute(query, [business_url])

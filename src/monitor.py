@@ -61,7 +61,7 @@ class Monitor:
         """Create necessary tables if they don't exist."""
         with self.conn.cursor() as cursor:
             cursor.execute("""
-                CREATE TABLE IF NOT EXISTS review (
+                CREATE TABLE IF NOT EXISTS reviews (
                     id SERIAL PRIMARY KEY,
                     id_review TEXT UNIQUE,
                     caption TEXT,
@@ -121,7 +121,7 @@ class Monitor:
         try:
             with self.conn.cursor() as cursor:
                 cursor.execute("""
-                    INSERT INTO review (
+                    INSERT INTO reviews (
                         id_review, caption, relative_date, retrieval_date, 
                         rating, username, n_review_user, url_user, timestamp,
                         replies, business_url
@@ -182,7 +182,7 @@ class Monitor:
         """Check if we should stop scraping based on review date or if it already exists."""
         try:
             with self.conn.cursor() as cursor:
-                cursor.execute("SELECT 1 FROM review WHERE id_review = %s", (r['id_review'],))
+                cursor.execute("SELECT 1 FROM reviews WHERE id_review = %s", (r['id_review'],))
                 is_old_review = cursor.fetchone()
                 
             if is_old_review is None and r['timestamp'] >= self.min_date_review:

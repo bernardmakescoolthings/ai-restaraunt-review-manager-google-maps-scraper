@@ -55,8 +55,8 @@ def get_reviews(limit=None, offset=None, business_url=None):
             query = """
                 SELECT id_review, caption, relative_date, retrieval_date, 
                        rating, username, n_review_user, url_user, 
-                       timestamp, replies, business_url
-                FROM review
+                       business_url, business_name, business_rating, business_n_reviews
+                FROM reviews
                 WHERE 1=1
             """
             params = []

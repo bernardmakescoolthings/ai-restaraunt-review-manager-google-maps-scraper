@@ -143,7 +143,7 @@ def print_database_info():
             
             if not tables:
                 print("\nNo tables found in the database.")
-                print("Run the monitor script first to create the review table.")
+                print("Run the monitor script first to create the reviews table.")
                 return
             
             # Print table information

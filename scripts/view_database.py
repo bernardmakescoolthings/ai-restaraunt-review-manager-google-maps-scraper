@@ -42,7 +42,7 @@ def view_reviews(limit=10, business_url=None):
     
     try:
         with conn.cursor(cursor_factory=psycopg2.extras.DictCursor) as cursor:
-            query = "SELECT id, id_review, caption, rating, username, timestamp, business_url FROM review"
+            query = "SELECT id, id_review, caption, rating, username, timestamp, business_url FROM reviews"
             params = []
             
             if business_url:
@@ -60,13 +60,13 @@ def view_reviews(limit=10, business_url=None):
                 return
                 
             # Get count of total reviews
-            cursor.execute("SELECT COUNT(*) FROM review")
+            cursor.execute("SELECT COUNT(*) FROM reviews")
             total_count = cursor.fetchone()[0]
             
             # Get business URLs and their counts
             cursor.execute("""
                 SELECT business_url, COUNT(*) 
-                FROM review 
+                FROM reviews 
                 GROUP BY business_url 
                 ORDER BY COUNT(*) DESC
             """)
