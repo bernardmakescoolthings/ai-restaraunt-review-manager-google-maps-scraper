@@ -27,7 +27,7 @@ class Monitor:
     def __init__(self, url_file, from_date):
         # load urls file
         with open(url_file, 'r') as furl:
-            self.urls = [u[:-1] for u in furl]
+            self.urls = [u.strip() for u in furl if u.strip()]  # Only include non-empty lines
 
         # Connect to PostgreSQL
         self.conn = self._connect_to_db()
