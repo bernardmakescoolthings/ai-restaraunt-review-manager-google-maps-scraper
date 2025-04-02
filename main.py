@@ -16,17 +16,18 @@ def main():
 
     # Parse command line arguments
     parser = argparse.ArgumentParser(description='Google Maps Review Manager')
-    parser.add_argument('--i', type=str, default='input/urls.txt', 
-                      help='target URLs file (default: input/urls.txt)')
-    parser.add_argument('--from-date', type=str, default='2022-01-01',
-                      help='start date in format: YYYY-MM-DD (default: 2022-01-01)')
+    parser.add_argument('--i', type=str, default='input/usernames.txt', 
+                      help='target usernames file (default: input/usernames.txt)')
+    parser.add_argument('--from-date', type=str, default='2020-01-01',
+                      help='start date in format: YYYY-MM-DD (default: 2020-01-01)')
     
     args = parser.parse_args()
 
-    # Check if URLs file exists
+    # Check if usernames file exists
     if not os.path.exists(args.i):
-        print(f"Error: URLs file '{args.i}' not found.")
-        print("Please create the file with one URL per line.")
+        print(f"Error: Usernames file '{args.i}' not found.")
+        print("Please create the file with one business username per line.")
+        print("Each username should correspond to an entry in the businesses table.")
         sys.exit(1)
 
     # Initialize and run monitor

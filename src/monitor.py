@@ -24,10 +24,10 @@ DEFAULT_DB_CONFIG = {
 
 class Monitor:
 
-    def __init__(self, url_file, from_date):
-        # load urls file
-        with open(url_file, 'r') as furl:
-            self.urls = [u.strip() for u in furl if u.strip()]  # Only include non-empty lines
+    def __init__(self, username_file, from_date):
+        # load usernames file
+        with open(username_file, 'r') as fuser:
+            self.usernames = [u.strip() for u in fuser if u.strip()]  # Only include non-empty lines
 
         # Connect to PostgreSQL
         self.conn = self._connect_to_db()
@@ -73,17 +73,42 @@ class Monitor:
                     url_user TEXT,
                     timestamp TIMESTAMP,
                     replies TEXT,
-                    business_url TEXT
+                    business_id TEXT,
+                    business_username TEXT
                 )
             """)
+
+    def _get_business_info(self, username):
+        """Get business URL and ID from username."""
+        try:
+            with self.conn.cursor() as cursor:
+                cursor.execute("""
+                    SELECT business_id, business_url 
+                    FROM businesses 
+                    WHERE business_username = %s
+                """, (username,))
+                result = cursor.fetchone()
+                if result:
+                    return result[0], result[1]  # business_id, business_url
+                else:
+                    self.logger.error(f"Business not found for username: {username}")
+                    return None, None
+        except Exception as e:
+            self.logger.error(f"Error getting business info: {e}")
+            return None, None
 
     def scrape_gm_reviews(self):
         # init scraper and incremental add reviews
         with GoogleMapsScraper() as scraper:
-            for url in self.urls:
+            for username in self.usernames:
                 try:
+                    # Get business info from username
+                    business_id, business_url = self._get_business_info(username)
+                    if not business_url:
+                        continue
+
                     # Use sort_by with index 1 for newest reviews
-                    error = scraper.sort_by(url, 1)  # 1 represents 'newest' in the ind dictionary
+                    error = scraper.sort_by(business_url, 1)  # 1 represents 'newest' in the ind dictionary
                     if error == 0:
                         stop = False
                         offset = 0
@@ -95,8 +120,9 @@ class Monitor:
                             for r in rlist:
                                 # calculate review date and compare to input min_date_review
                                 r['timestamp'] = self.__parse_relative_date(r['relative_date'])
-                                # Add business URL to the review
-                                r['business_url'] = url
+                                # Add business info to the review
+                                r['business_id'] = business_id
+                                r['business_username'] = username
                                 stop = self.__stop(r)
                                 if not stop:
                                     self._insert_review(r)
@@ -106,15 +132,15 @@ class Monitor:
                             offset += len(rlist)
 
                         # log total number
-                        self.logger.info('{} : {} new reviews'.format(url, n_new_reviews))
+                        self.logger.info('{} : {} new reviews'.format(username, n_new_reviews))
                     else:
-                        self.logger.warning('Sorting reviews failed for {}'.format(url))
+                        self.logger.warning('Sorting reviews failed for {}'.format(username))
 
                 except Exception as e:
                     exc_type, exc_obj, exc_tb = sys.exc_info()
                     fname = os.path.split(exc_tb.tb_frame.f_code.co_filename)[1]
 
-                    self.logger.error('{}: {}, {}, {}'.format(url, exc_type, fname, exc_tb.tb_lineno))
+                    self.logger.error('{}: {}, {}, {}'.format(username, exc_type, fname, exc_tb.tb_lineno))
 
     def _insert_review(self, review):
         """Insert a review into the PostgreSQL database."""
@@ -124,8 +150,8 @@ class Monitor:
                     INSERT INTO reviews (
                         id_review, caption, relative_date, retrieval_date, 
                         rating, username, n_review_user, url_user, timestamp,
-                        replies, business_url
-                    ) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+                        replies, business_id, business_username
+                    ) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
                     ON CONFLICT (id_review) DO NOTHING
                 """, (
                     review.get('id_review'),
@@ -138,7 +164,8 @@ class Monitor:
                     review.get('url_user'),
                     review.get('timestamp'),
                     None,  # replies initially set to null
-                    review.get('business_url')
+                    review.get('business_id'),
+                    review.get('business_username')
                 ))
         except Exception as e:
             self.logger.error(f"Error inserting review: {e}")
@@ -211,7 +238,7 @@ class Monitor:
 
 def main():
     parser = argparse.ArgumentParser(description='Monitor Google Maps places')
-    parser.add_argument('--i', type=str, default='input/urls.txt', help='target URLs file')
+    parser.add_argument('--i', type=str, default='input/usernames.txt', help='target usernames file')
     parser.add_argument('--from-date', type=str, default='2022-01-01', help='start date in format: YYYY-MM-DD')
 
     args = parser.parse_args()
